@@ -1,43 +1,67 @@
+# Python3 인터프리터를 사용하여 스크립트를 실행하도록 지정
 #!/usr/bin/env python3
-
+#로깅 모듈
 import logging
+#OS 관련 모듈
 import os
+#정규 표현식 모듈
 import re
+#XML 처리 모듈
+
 import xml.etree.cElementTree as Xml
 from typing import List, Set, Dict, Union
 from xml.etree.cElementTree import Element
 
+# Obfuscapk 난독화 카테고리 모듈
 from obfuscapk import obfuscator_category
+
+# Obfuscapk 유틸리티 모듈
 from obfuscapk import util
+
+# Obfuscapk Obfuscation 클래스
 from obfuscapk.obfuscation import Obfuscation
 
 
+# ClassRename 클래스 요약:
+# Smali 코드 내 클래스 이름을 난독화하고, Manifest와 XML 파일에서의
+# 클래스 사용 부분까지 일괄적으로 변경하여 역공학을 어렵게 만드는
+# 난독화 클래스
+
+
 class ClassRename(obfuscator_category.IRenameObfuscator):
+    
+# 클래스 생성자
     def __init__(self):
+        #로거 생성
         self.logger = logging.getLogger(
             "{0}.{1}".format(__name__, self.__class__.__name__)
         )
+        #상위 클래스 초기화
         super().__init__()
-
+        # Subclass 이름 패턴 정의
         self.subclass_name_pattern = re.compile(
             r'\s+name\s=\s"(?P<subclass_name>\S+?)"', re.UNICODE
         )
 
+# 문자열 패턴 정의
         self.string_pattern = re.compile(r'"(?P<string_value>\S+?)"', re.UNICODE)
-
+        # 클래스명 분할 패턴 정의
         self.split_class_pattern = re.compile(r"[/$]")
-
+        # 패키지명 및 암호화된 패키지명
         self.package_name: Union[str, None] = None
         self.encrypted_package_name: Union[str, None] = None
         self.ignore_package_names = []
 
+ # Smali 파일별 클래스 이름 매핑
         # Will be populated before running the class rename obfuscator.
         self.class_name_to_smali_file: dict = {}
 
+# 클래스/패키지명 난독화
     def encrypt_identifier(self, identifier: str) -> str:
         identifier_md5 = util.get_string_md5(identifier)
         return "p{0}".format(identifier_md5.lower()[:8])
 
+# 클래스 이름의 슬래시와 $를 .으로 변환
     def slash_to_dot_notation_for_classes(
         self, rename_transformations: Dict[str, str]
     ) -> Dict[str, str]:
@@ -51,18 +75,20 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
 
         return dot_rename_transformations
 
+# 패키지명 변환 및 Manifest 갱신
     def transform_package_name(self, manifest_xml_root: Element):
+       #패키지명을 암호화
         self.encrypted_package_name = ".".join(
             [self.encrypt_identifier(token) for token in self.package_name.split(".")]
         )
-
+ # Manifest 파일에 패키지명 변경
         # Rename package name in manifest file.
         manifest_xml_root.set("package", self.encrypted_package_name)
         manifest_xml_root.set(
             "{http://schemas.android.com/apk/res/android}sharedUserId",
             "{0}.uid.shared".format(util.get_random_string(16)),
         )
-
+# Smali 파일 내 클래스 선언 난독화
     def rename_class_declarations(
         self, smali_files: List[str], interactive: bool = False
     ) -> dict:
@@ -88,11 +114,12 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                         class_match = util.class_pattern.match(line)
                         if class_match:
                             class_name = class_match.group("class_name")
-
+# 난독화 제외 클래스 확인
                             ignore_class = class_name.startswith(
                                 tuple(self.ignore_package_names)
                             )
 
+ # 클래스명을 토큰별로 분리하고 암호화
                             # Split class name to its components and encrypt them.
                             class_tokens = self.split_class_pattern.split(
                                 class_name[1:-1]
@@ -119,13 +146,14 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                                     )
                                 separator_index += 1
 
+ # Smali 파일에 암호화된 클래스명 반영
                             out_file.write(
                                 line.replace(class_name, encrypted_class_name)
                             )
 
                             renamed_classes[class_name] = encrypted_class_name
                             continue
-
+ # 내부 클래스 어노테이션 처리
                     if (
                         line.strip()
                         == ".annotation system Ldalvik/annotation/InnerClass;"
@@ -135,6 +163,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                         continue
 
                     if annotation_flag and 'name = "' in line:
+                          # Subclass 이름도 암호화
                         # Subclasses have to be renamed as well.
                         subclass_match = self.subclass_name_pattern.match(line)
                         if subclass_match and not r_class:
@@ -153,7 +182,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                         annotation_flag = False
                         out_file.write(line)
                         continue
-
+ # 메서드 선언 이후 클래스 정의는 더 이상 없음
                     # Method declaration reached, no more class definitions in
                     # this file.
                     if line.startswith(".method "):
@@ -163,7 +192,8 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                         out_file.write(line)
 
         return renamed_classes
-
+    
+ # Smali 파일 내 클래스 사용 부분 난독화
     def rename_class_usages_in_smali(
         self,
         smali_files: List[str],
@@ -173,7 +203,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
         dot_rename_transformations = self.slash_to_dot_notation_for_classes(
             rename_transformations
         )
-
+ # 패키지명 추가
         # Add package name.
         dot_rename_transformations[self.package_name] = self.encrypted_package_name
 
@@ -184,6 +214,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
         ):
             with util.inplace_edit_file(smali_file) as (in_file, out_file):
                 for line in in_file:
+                    # 문자열로 사용된 클래스명 변경
                     # Rename classes used as strings with . instead of /.
                     string_match = self.string_pattern.search(line)
                     if (
@@ -197,7 +228,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                                 string_match.group("string_value")
                             ],
                         )
-
+ # Annotation 문자열 처리
                     # Sometimes classes are used in annotations as strings
                     # without trailing ;
                     if (
@@ -211,7 +242,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                                 "{0};".format(string_match.group("string_value"))
                             ][:-1],
                         )
-
+ # 클래식 Smali 문법으로 사용된 클래스명 변경
                     # Rename classes used with the "classic" syntax
                     # (leading L and trailing ;).
                     class_names = util.class_name_pattern.findall(line)
@@ -222,7 +253,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                             )
 
                     out_file.write(line)
-
+# XML 파일 내 클래스 사용 부분 난독화
     def rename_class_usages_in_xml(
         self,
         xml_files: List[str],
@@ -232,7 +263,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
         dot_rename_transformations = self.slash_to_dot_notation_for_classes(
             rename_transformations
         )
-
+# 패키지명 추가
         # Add package name.
         dot_rename_transformations[self.package_name] = self.encrypted_package_name
 
@@ -241,16 +272,17 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
             interactive=interactive,
             description="Renaming class usages in xml files",
         ):
+             # XML 파일 읽기
             with open(xml_file, "r", encoding="utf-8") as current_file:
                 file_content = current_file.read()
-
+  # 길이가 긴 이름부터 교체
             # Replace strings from longest to shortest (to avoid replacing
             # partial strings).
             for old_name in sorted(dot_rename_transformations, reverse=True, key=len):
                 file_content = file_content.replace(
                     old_name, dot_rename_transformations[old_name]
                 )
-
+ # Activity명에 패키지명 제외된 경우 처리
                 # Activity without package name (".ActivityName")
                 if (
                     '"{0}"'.format(old_name.replace(self.package_name, ""))
@@ -264,14 +296,15 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                             )
                         ),
                     )
-
+ # 변경된 내용 쓰기
             with open(xml_file, "w", encoding="utf-8") as current_file:
                 current_file.write(file_content)
-
+  # 난독화 실행
     def obfuscate(self, obfuscation_info: Obfuscation):
         self.logger.info('Running "{0}" obfuscator'.format(self.__class__.__name__))
 
         try:
+            # Android namespace 등록
             Xml.register_namespace(
                 "android", "http://schemas.android.com/apk/res/android"
             )
@@ -282,12 +315,15 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
             )
             manifest_root = manifest_tree.getroot()
 
+            # 패키지명 가져오기
+
             self.package_name = manifest_root.get("package")
             if not self.package_name:
                 raise Exception(
                     "Unable to extract package name from application manifest"
                 )
 
+# Smali 파일별 클래스 이름 매핑
             # Get a mapping between class name and smali file path.
             for smali_file in util.show_list_progress(
                 obfuscation_info.get_smali_files(),
@@ -305,12 +341,12 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                                     class_match.group("class_name")
                                 ] = smali_file
                                 break
-
+  # Manifest 내 패키지명 갱신
             self.transform_package_name(manifest_root)
-
+ # Manifest 파일 쓰기
             # Write the changes into the manifest file.
             manifest_tree.write(obfuscation_info.get_manifest_file(), encoding="utf-8")
-
+# XML 파일 수집
             xml_files: Set[str] = set(
                 os.path.join(root, file_name)
                 for root, dir_names, file_names in os.walk(
@@ -338,21 +374,22 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
             #     list(package_smali_files), obfuscation_info.interactive
             # )
 
+ # Ignore 패키지 목록 가져오기
             # Get user defined ignore package list.
             self.ignore_package_names = obfuscation_info.get_ignore_package_names()
-
+   # 모든 Smali 파일 내 클래스명 난독화
             # Rename all classes declared in smali files.
             class_rename_transformations = self.rename_class_declarations(
                 obfuscation_info.get_smali_files(), obfuscation_info.interactive
             )
-
+ # Smali 파일 내 사용 부분 난독화
             # Update renamed classes through all the smali files.
             self.rename_class_usages_in_smali(
                 obfuscation_info.get_smali_files(),
                 class_rename_transformations,
                 obfuscation_info.interactive,
             )
-
+ # XML 파일 내 사용 부분 난독화
             # Update renamed classes through all the xml files.
             self.rename_class_usages_in_xml(
                 list(xml_files),
@@ -361,6 +398,7 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
             )
 
         except Exception as e:
+               # 예외 발생 시 로그
             self.logger.error(
                 'Error during execution of "{0}" obfuscator: {1}'.format(
                     self.__class__.__name__, e
@@ -369,4 +407,5 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
             raise
 
         finally:
+             # 사용된 난독화기록에 추가
             obfuscation_info.used_obfuscators.append(self.__class__.__name__)
