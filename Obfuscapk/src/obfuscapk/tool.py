@@ -202,8 +202,7 @@ except ImportError:
 
 
 class Zipalign(object):
-    #MissingDependecyError 테스트
-    raise MissingDependencyError(tool_name="zipalign(강제 테스트 진행)")
+    
     def __init__(self):
         self.logger = logging.getLogger(
             "{0}.{1}".format(__name__, self.__class__.__name__)
