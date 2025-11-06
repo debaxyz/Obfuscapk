@@ -143,7 +143,7 @@ def perform_obfuscation(
         unit="obfuscator",
         description="Running obfuscators",
     )
-
+#모든 플러그인을 실행(new_alignment.py등 난독화 파일 호출)
     for obfuscator_name in obfuscator_progress:
         try:
             if interactive:
@@ -152,5 +152,7 @@ def perform_obfuscation(
                 )
             (obfuscator_name_to_function[obfuscator_name])(obfuscation)
         except Exception as e:
+            #new_alignment.NewAlignment.obfuscate()와 같이 처리된 예외가 여기로 전달됨
+            #exc_info=True 옵션으로 모든 예외 정보 로그에 기록
             logger.critical("Error during obfuscation: {0}".format(e), exc_info=True)
-            raise
+            raise 

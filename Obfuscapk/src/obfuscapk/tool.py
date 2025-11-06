@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
+from obfuscapk.exceptions import MissingDependencyError, ToolExecutionError
 from typing import List
 
 
@@ -191,6 +192,15 @@ class Apktool(object):
             raise
 
 
+#새롭게 정의한 예외 클래스들을 가지고 옴
+#예외 클래스가 없을 경우를 대비해 임시 정의도 포함
+try:
+    from obfuscapk.exceptions import MissingDependencyError,ToolExecutionError
+except ImportError:
+    class MissingDependencyError(Exception): pass
+    class ToolExecutionError(Exception): pass    
+
+
 class Zipalign(object):
     def __init__(self):
         self.logger = logging.getLogger(
@@ -202,24 +212,43 @@ class Zipalign(object):
         else:
             self.zipalign_path: str = "zipalign"
 
+       #shutil.which으로 zipalign 경로 미리 확인
         full_zipalign_path = shutil.which(self.zipalign_path)
 
         # Make sure to use the full path of the executable (needed for cross-platform
         # compatibility).
+
+        #zipalign 경로 확인
         if full_zipalign_path is None:
-            raise RuntimeError(
-                'Something is wrong with executable "{0}"'.format(self.zipalign_path)
+            #없으면 RuntimeError 발생
+
+           
+            #[고도화 1](zipalign이 없다는 건 Android SDK Build-Tools가 설치되지 않았다는 뜻이므로
+            #사용자에게 설치 안내 메시지 제공하는 전용 예외 발생
+            raise MissingDependencyError(
+               tool_name="zipalign"
+                
             )
+        
         else:
+            #zipalign 경로 있으면 전체 경로 저장
             self.zipalign_path = full_zipalign_path
 
+
+#obfuscation.py의 lign_obfuscated_apk()에서  zipalign.align(self.obfuscated_apk_path)을 통해 호출되는 부분
+    #apk_path: 정렬할 apk 파일 경로
+    #출력: str. zipalign 명령어가 성공정으로 실행되었을 때 내뱉는 "성공 로그" 반환
     def align(self, apk_path: str) -> str:
-        # Check if the apk file to align is a valid file.
+       
+
+        #zipaglin을 실행하기 전에, 입력받은 apk 파일 존재 여부 확인
         if not os.path.isfile(apk_path):
             self.logger.error('Unable to find file "{0}"'.format(apk_path))
+            #파일이 없으면 raise 발생시켜 프로그램 즉시 안전하게 중단시킴
             raise FileNotFoundError('Unable to find file "{0}"'.format(apk_path))
 
         # Since zipalign cannot be run inplace, a temp file will be created.
+       # 임시로 사용할 apk 복사본 경로 생성
         apk_copy_path = "{0}.copy.apk".format(
             os.path.join(
                 os.path.dirname(apk_path),
@@ -227,38 +256,67 @@ class Zipalign(object):
             )
         )
 
+#이제부터 작업 시작
         try:
+            #apk_path(원본 apk 파일)을 apk_copy_path(임시 복사본 )로 복사
             apk_copy_path = shutil.copy2(apk_path, apk_copy_path)
 
+#zipalign 명령어 조립 및 실행
+
+#algin_cmd: subprocess로 실행할 zipalign 명령어 리스트
             align_cmd = [
                 self.zipalign_path,
-                "-p",
-                "-v",
-                "-f",
-                "4",
-                apk_copy_path,
-                apk_path,
-            ]
+                "-p", #apk 내부의 .so(네이티브 라이브러리) 파일들도 정렬
+                "-v", #자세한 실행 로그 출력
+                "-f", #출력 파일이 이미 존재하면 강제로 덮어쓰기
+                "4", #4바이트 경계로 정렬
+                apk_copy_path, #입력 파일: 임시 복사본(예: app.copy.apk)
+                apk_path,   #출력 파일: 원본 apk 파일 경로(덮어쓰기) 예: app.apk
+            ] #zipalign은 app.copy.apk을 읽어서, 정렬된 버전을  app.apk에 덮어쓴다.
 
             self.logger.info('Running align command "{0}"'.format(" ".join(align_cmd)))
-            output = subprocess.check_output(
-                align_cmd, stderr=subprocess.STDOUT
-            ).strip()
-            return output.decode(errors="replace")
-        except subprocess.CalledProcessError as e:
-            self.logger.error(
-                "Error during align command: {0}".format(
-                    e.output.decode(errors="replace") if e.output else e
-                )
+            
+            result = subprocess.run(
+                align_cmd,
+                capture_output=True, #stdout, stderr 캡처
+                text=True,           #출력을 문자열로 받음
+                check=False,  #종료코드 0이 아닐 때 수동으로 예외 처리
+
             )
-            raise
+        #[고도화 2] return code로 성공/실패 수동 확인
+       #원래는  suvprocess.CalledProcessError 로 예외처리 => 이제는 ToolExecutionError 로 예외처리
+       #zipalign이 실패했을 때(종료코드 1이상) 발생하는 예외 처리
+            if result.returncode != 0:
+                error_details = result.stderr.strip()
+                self.logger.error(
+                    "Zipalign 실행 실패.Details: {0}".format(error_details)
+                )
+                raise ToolExecutionError(
+                    tool_name="zipalign",
+                    details=error_details)
+            #성공 시
+            #zipalign 명령어가 성공적으로 실행되면(종료코드 0), 그 출력(stdout) 반환
+            return result.stdout.strip()
+        
+        #[고도화 3]: OS관련 시스템 호출 중 오류 발생 시 예외 처리(OSError)
+
+        #FileNotFoundError(파일이 존재하지 않을 때),PermissionError(접근권한이 없을 때) 등
+        except(OSError) as e:
+            self.logger.error("Error during aligning (file error): {0}".format(e))
+
+            raise # 상위 호출자 obfuscation.align_obfuscated_apk()에게 예외 재발생시켜 알림
+        
+
+        #zipalign 실패 외의 예상치 못한 다른 예외 발생시
         except Exception as e:
             self.logger.error("Error during aligning: {0}".format(e))
             raise
+
+        #오류가 나든 안나든 실행
         finally:
             # Remove the temp file used for zipalign.
             if os.path.isfile(apk_copy_path):
-                os.remove(apk_copy_path)
+                os.remove(apk_copy_path) #임시로 만들었던 app.copy.apk 파일이 남아있으면 삭제
 
 
 class ApkSigner(object):

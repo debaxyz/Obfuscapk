@@ -50,16 +50,18 @@ class NewAlignment(obfuscator_category.ITrivialObfuscator):
         self.logger.info('Running "{0}" obfuscator'.format(self.__class__.__name__))
 
         try:
-            #Obufscation 객체를 통해 APK 정렬 수행
+            #Obfuscation 객체를 통해 APK 정렬 수행
+            #Obfuscation 클래스의 obfuscation_info 객체의 align_obfuscated_apk() 메서드에게 실제 정렬 작업 위임
             obfuscation_info.align_obfuscated_apk()
         except Exception as e:
             #오류 로그 기록 및 예외 발생
             self.logger.error(
+                #어떤 난독화기에서 오류 발생했는지 기록(align_obfuscated_apk()에서 발생한 예외 포함)
                 'Error during execution of "{0}" obfuscator: {1}'.format(
                     self.__class__.__name__, e
                 )
             )
-            raise
+            raise #상위 호출자에게 예외 재발생시켜 알림
 
         finally:
             #사용된 난독화기록에 추가

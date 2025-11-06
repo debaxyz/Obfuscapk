@@ -597,16 +597,20 @@ class Obfuscation(object):
         # This method must be called AFTER the obfuscated apk has been signed.
 
         # The obfuscated apk will be aligned with zipalign.
+        
         zipalign: Zipalign = Zipalign()
         if self.is_bundle:
             return
 
+
+
         try:
+            #zipalign.align() 메서드에게 실제 정렬 작업 위임
             zipalign.align(self.obfuscated_apk_path)
         except Exception as e:
+            #zipalign 실패 시 오류 로그 기록 및 예외 발생을 기록
             self.logger.error("Error during apk alignment: {0}".format(e))
-            raise
-
+            raise #상위 호출자에게 예외처리(new_alignment.NewAlignment.obfuscate()에서 처리)
     def is_multidex(self) -> bool:
         if not self._is_decoded:
             self.decode_apk()

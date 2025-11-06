@@ -168,6 +168,8 @@ def main():
     if arguments.ignore_packages_file:
         arguments.ignore_packages_file = arguments.ignore_packages_file.strip(" '\"")
 
+#main.py에서 perform_obfuscation() 호출해서 오류 받음
+#try except문이 없으므로 예외 발생 시 main() 함수로
     perform_obfuscation(
         arguments.apk_file,
         arguments.obfuscator,
@@ -184,6 +186,6 @@ def main():
         arguments.use_aapt2,
     )
 
-
+#main 함수에서 예외처리 없으니 프로그램 전체 중단=>Traceback 전체를 터미널에 출력, 스크립트 실행 즉시 정료
 if __name__ == "__main__":
     main()
