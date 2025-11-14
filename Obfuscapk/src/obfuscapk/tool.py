@@ -269,7 +269,8 @@ class Zipalign(object):
                 self.zipalign_path,
                 "-p", #apk 내부의 .so(네이티브 라이브러리) 파일들도 정렬
                 "-v", #자세한 실행 로그 출력
-                "-f", #출력 파일이 이미 존재하면 강제로 덮어쓰기
+                # "-f", #출력 파일이 이미 존재하면 강제로 덮어쓰기
+                "-invalid-flag", #존재하지 않는 플래그(옵션) - 테스트용
                 "4", #4바이트 경계로 정렬
                 apk_copy_path, #입력 파일: 임시 복사본(예: app.copy.apk)
                 apk_path,   #출력 파일: 원본 apk 파일 경로(덮어쓰기) 예: app.apk

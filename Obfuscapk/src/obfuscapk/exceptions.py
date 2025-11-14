@@ -67,3 +67,17 @@ class PluginExecutionError(PluginError):
         #details는 플러그인이 기록한 실제 오류 메세지
         self.details = details
         super().__init__(plugin_name, f"'{plugin_name}' 실행 중 오류 발생: {details}")  
+
+#SmailParsing이 실패했을 때(reorder 플러그인 등에서 사용)
+#바로 프로그램이 죽는데 이 예외 클래스를 사용해서 어디서 파싱이 실패했는지 smail 파일 상세 정보 제공
+class SmaliParsingError(PluginError):
+    """
+    Smali 코드 파싱 중 오류가 발생했을 때 발생하는 예외 클래스
+    예: Reorder 플러그인이 Smali 파일을 파싱하는 도중 문법 오류를 발견한 경우
+    """
+
+    def __init__(self, plugin_name: str, file_path: str, details: str):
+        self.plugin_name = plugin_name
+        self.file_path = file_path
+        self.details = details
+        super().__init__(plugin_name, f"Smali 파일 '{file_path}' 파싱 중 오류 발생: {details}")        
