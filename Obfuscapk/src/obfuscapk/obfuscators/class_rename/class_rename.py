@@ -21,6 +21,8 @@ from obfuscapk import util
 # Obfuscapk Obfuscation 클래스
 from obfuscapk.obfuscation import Obfuscation
 
+#예외처리 고도화
+from obfuscapk.exceptions import PluginExecutionError
 
 # ClassRename 클래스 요약:
 # Smali 코드 내 클래스 이름을 난독화하고, Manifest와 XML 파일에서의
@@ -299,6 +301,36 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
  # 변경된 내용 쓰기
             with open(xml_file, "w", encoding="utf-8") as current_file:
                 current_file.write(file_content)
+
+  #고도화 진행(@HiltAndroidApp 어노테이션 등  Keep 목록에 추가하는 매서드)
+    def scan_and_keep_critical_annotation(self,smali_files: List[str]) -> List[str]:
+       keep_list = []
+       #찾아야 할 어노테이션들을 리스트로 정의
+       target_annotations = [
+           "Ldagger/hilt/android/HiltAndroidApp;", # Application용
+           "Ldagger/hilt/android/AndroidEntryPoint;", # Activity/Fragment용
+           "Ljavax/inject/Inject;", # 생성자 주입용
+           "Ldagger/hilt/android/lifecycle/HiltViewModel;", # ViewModel용
+           "Lkotlinx/serialization/Serializable;",# 직렬화용
+           "Landroidx/compose/runtime/Composable;" # Jetpack Compose용
+
+       ]
+       self.logger.info("Scanning for @HiltAndroidApp to apply keep rules")
+       for smali_file in smali_files:
+           with open(smali_file, "r", encoding="utf-8") as f:
+               content=f.read()
+               #리스트에 있는 어노테이션 중 하나라도 있는지 확인
+               #any() 함수는 리스트 중 하나라도 참이면 True
+               if any(target in content for target in target_annotations):
+                   #정규식 클래스 이름 추출
+                     class_match = util.class_pattern.search(content)
+                     if class_match:
+                            class_name = class_match.group("class_name")
+                            keep_list.append(class_name)
+                            self.logger.info(f"Keeping Hilt annotated class: {class_name}")
+       return keep_list
+
+
   # 난독화 실행
     def obfuscate(self, obfuscation_info: Obfuscation):
         self.logger.info('Running "{0}" obfuscator'.format(self.__class__.__name__))
@@ -377,7 +409,53 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
  # Ignore 패키지 목록 가져오기
             # Get user defined ignore package list.
             self.ignore_package_names = obfuscation_info.get_ignore_package_names()
+
+ #고도화 진행(네트워크, DB, 데이터모델 등 난독화 대상에서 제외)
+            nia_ignore_packages = [
+                #앱 내부 핵심 데이터 로직
+                "Lcom/google/samples/apps/nowinandroid/core/network",   # 네트워크 (Serialization)
+                "Lcom/google/samples/apps/nowinandroid/core/database",  # 로컬 DB (Room)
+                "Lcom/google/samples/apps/nowinandroid/core/datastore", # 데이터 저장소 (Proto)
+                "Lcom/google/samples/apps/nowinandroid/core/model",     # 데이터 모델 (직렬화 가능성)
+                 #앱의 시작점
+                "Lcom/google/samples/apps/nowinandroid/NiaApplication;",
+                # 필요하다면 feature 패키지의 ViewModel도 추가 가능
+
+                # Sync 관련 작업도 백그라운드에서 돌기 때문에 보호하는 것이 안전함
+                "Lcom/google/samples/apps/nowinandroid/sync",
+               
+                # [신규 추가] 크래시를 유발하는 외부 라이브러리 방어 (Keep)
+                # 1. 로그의 직접적 원인 (Firebase & Transport)
+                "Lcom/google/android/datatransport", 
+                "Lcom/google/firebase",
+                
+                # 2. Hilt/Dagger 내부 로직 보호 (이름 바뀌면 주입 실패)
+                "Ldagger",
+                "Lhilt_aggregated_deps", 
+
+                # 3. Kotlin 기본 라이브러리 및 코루틴 (건드리면 런타임 오류 빈번)
+                "Lkotlin",
+                "Lkotlinx", 
+
+                # 4. AndroidX 핵심 컴포넌트 (Startup, Lifecycle, Arch 등 리플렉션 사용)
+                "Landroidx/startup",
+                "Landroidx/lifecycle",
+                "Landroidx/arch",
+                "Landroidx/room",  # Room 내부 클래스 보호
+            ]   
+            #기존 Ignore에 추가
+
+            self.ignore_package_names.extend(nia_ignore_packages)    
+
+            #고도화 진행(Hilt 어노테이션 관련 난독화 대상에서 제외)
+            critical_keep_classes = self.scan_and_keep_critical_annotation(obfuscation_info.get_smali_files())
+            self.ignore_package_names.extend(critical_keep_classes)
+
+
+            
+            self.logger.info(f"Total classes/packages protected(class_rename 제외 대상): {len(self.ignore_package_names)}")
    # 모든 Smali 파일 내 클래스명 난독화
+
             # Rename all classes declared in smali files.
             class_rename_transformations = self.rename_class_declarations(
                 obfuscation_info.get_smali_files(), obfuscation_info.interactive
@@ -404,7 +482,11 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                     self.__class__.__name__, e
                 )
             )
-            raise
+            #고도화(exceptions.py를 통해 예외처리 강화)
+            raise PluginExecutionError(
+                plugin_name=self.__class__.__name__,
+                details=str(e)
+            ) from e
 
         finally:
              # 사용된 난독화기록에 추가
