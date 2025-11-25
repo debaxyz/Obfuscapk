@@ -417,21 +417,28 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                 "Lcom/google/samples/apps/nowinandroid/core/database",  # 로컬 DB (Room)
                 "Lcom/google/samples/apps/nowinandroid/core/datastore", # 데이터 저장소 (Proto)
                 "Lcom/google/samples/apps/nowinandroid/core/model",     # 데이터 모델 (직렬화 가능성)
+               
                  #앱의 시작점
                 "Lcom/google/samples/apps/nowinandroid/NiaApplication;",
                 # 필요하다면 feature 패키지의 ViewModel도 추가 가능
 
+                "Lcom/google/samples/apps/nowinandroid/core/data",
+                "Lcom/google/samples/apps/nowinandroid/core/common",
+
                 # Sync 관련 작업도 백그라운드에서 돌기 때문에 보호하는 것이 안전함
                 "Lcom/google/samples/apps/nowinandroid/sync",
                
-                # [신규 추가] 크래시를 유발하는 외부 라이브러리 방어 (Keep)
-                # 1. 로그의 직접적 원인 (Firebase & Transport)
+                #  크래시를 유발하는 외부 라이브러리 방어 (Keep)
+
                 "Lcom/google/android/datatransport", 
                 "Lcom/google/firebase",
+                "Lcom/google/gson",
                 
                 # 2. Hilt/Dagger 내부 로직 보호 (이름 바뀌면 주입 실패)
                 "Ldagger",
                 "Lhilt_aggregated_deps", 
+                "Lcom/google/samples/apps/nowinandroid/Hilt_", #  Hilt가 생성한 부모 클래스들
+                "Lcom/google/samples/apps/nowinandroid/MainActivity", #  메인 액티비티 직접 보호 (확실하게!)
 
                 # 3. Kotlin 기본 라이브러리 및 코루틴 (건드리면 런타임 오류 빈번)
                 "Lkotlin",
@@ -442,6 +449,32 @@ class ClassRename(obfuscator_category.IRenameObfuscator):
                 "Landroidx/lifecycle",
                 "Landroidx/arch",
                 "Landroidx/room",  # Room 내부 클래스 보호
+
+                # Compose 런타임 및 UI 보호
+                "Landroidx/compose",
+
+                #  WorkManager 보호 (로그 분석 결과)
+                "Landroidx/work",
+
+                # 유틸리티 패키지 보호
+                "Lcom/google/samples/apps/nowinandroid/util",
+
+
+                "Lcom/google/samples/apps/nowinandroid/core",
+                "Lcom/google/samples/apps/nowinandroid/feature",
+
+                "Lcom/google/samples/apps/nowinandroid/ui",
+                 "Lcom/google/samples/apps/nowinandroid/uitesthiltmanifest",
+                "Lcom/google/samples/apps/nowinandroid/generated",
+
+                "Landroidx",
+                "Landroid/support",
+
+                "Lokhttp3",
+                "Lretrofit2",
+
+                #  구글 패키지 통째로 보호 (GMS, Firebase, 앱 코드 전체 포함)
+                "Lcom/google",
             ]   
             #기존 Ignore에 추가
 
