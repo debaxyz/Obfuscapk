@@ -11,6 +11,7 @@ from Crypto.Util.Padding import pad
 from obfuscapk import obfuscator_category
 from obfuscapk import util
 from obfuscapk.obfuscation import Obfuscation
+from obfuscapk.exceptions import PluginExecutionError
 
 
 class LibEncryption(obfuscator_category.IEncryptionObfuscator):
@@ -28,7 +29,12 @@ class LibEncryption(obfuscator_category.IEncryptionObfuscator):
         self.encryption_secret = obfuscation_info.encryption_secret
         try:
             native_libs = obfuscation_info.get_native_lib_files()
-
+            
+            #고도화 (.so 파일이 없는 어플리케이션도 있을 시 없으면 바로 종료=> 시간 절약)
+            if not native_libs:
+                self.logger.debug("No native libraries (.so) found. Skipping LibEncryption obfuscator.")
+                return
+            
             native_lib_invoke_pattern = re.compile(
                 r"\s+invoke-static\s{(?P<invoke_pass>[vp0-9]+)},\s"
                 r"Ljava/lang/System;->loadLibrary\(Ljava/lang/String;\)V"
@@ -41,7 +47,11 @@ class LibEncryption(obfuscator_category.IEncryptionObfuscator):
                     obfuscation_info.get_smali_files(),
                     interactive=obfuscation_info.interactive,
                     description="Encrypting native libraries",
-                ):
+                ):  
+                    #고도화 Hilt 생성 코드나 외부 라이브러리는 제외(안정성을 위해)
+                    if "Hilt_" in smali_file or "/androidx/" in smali_file:
+                        continue
+
                     self.logger.debug(
                         "Replacing native libraries with encrypted native libraries "
                         'in file "{0}"'.format(smali_file)
@@ -59,6 +69,10 @@ class LibEncryption(obfuscator_category.IEncryptionObfuscator):
 
                     editing_constructor = False
                     start_index = 0
+
+                    #고도화를 위해 파일 수정 여부를 추척하는 플래그 설정
+                    file_modified = False
+
                     for line_number, line in enumerate(lines):
                         if not class_name:
                             class_match = util.class_pattern.match(line)
@@ -87,6 +101,13 @@ class LibEncryption(obfuscator_category.IEncryptionObfuscator):
                                         local_count
                                     )
                                     continue
+                                else:
+                                    #고도화(레지스터 부족 시 로그 남기고 해당 메서드 포기)
+                                    self.logger.warning(
+                                       f"Skipping encryption in {class_name}: "
+                                       f"Too many locals ({local_count}). Max is 15."
+                                        ) 
+                                    break
 
                             # For some reason the locals declaration was not found where
                             # it should be, so assume the local registers are all used
@@ -131,9 +152,13 @@ class LibEncryption(obfuscator_category.IEncryptionObfuscator):
                                         class_register_num=local_count - 1,
                                     )
                                 )
+                                file_modified = True
 
                         # Encrypt the native libraries used in code and put them
                         # in assets folder.
+                    if file_modified: #고도화 파일이 수정된 경우에만 암호화 수행  
+                        self.logger.debug(f"Injecting decryption code into {smali_file}")
+                     
                         assets_dir = obfuscation_info.get_assets_directory()
                         os.makedirs(assets_dir, exist_ok=True)
                         for native_lib in native_libs:
@@ -146,7 +171,7 @@ class LibEncryption(obfuscator_category.IEncryptionObfuscator):
                                             arch=arch, lib_name=lib_name
                                         ),
                                     )
-
+                                    #암호화 수행
                                     with open(native_lib, "rb") as native_lib_file:
                                         encrypted_lib = AES.new(
                                             key=self.encryption_secret.encode(),
@@ -191,6 +216,7 @@ class LibEncryption(obfuscator_category.IEncryptionObfuscator):
 
                 # Remove the original native libraries that were encrypted (the
                 # encrypted ones will be used instead).
+                #원본 .so 파일 삭제
                 for _, original_lib in encrypted_to_original_mapping.items():
                     try:
                         os.remove(original_lib)
@@ -204,13 +230,17 @@ class LibEncryption(obfuscator_category.IEncryptionObfuscator):
             else:
                 self.logger.debug("No native libraries found")
 
+#고도화(예외처리 추가)
         except Exception as e:
             self.logger.error(
-                'Error during execution of "{0}" obfuscator: {1}'.format(
-                    self.__class__.__name__, e
+               self.logger.error(f'Error in LibEncryption: {e}')
                 )
-            )
-            raise
+            raise PluginExecutionError(
+                    plugin_name=self.__class__.__name__,
+                    details=str(e)
+                ) from e
+            
+           
 
         finally:
             obfuscation_info.used_obfuscators.append(self.__class__.__name__)
