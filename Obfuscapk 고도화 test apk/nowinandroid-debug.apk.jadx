@@ -5,12 +5,11 @@
   ],
   "treeExpansionsV2": [
     "t:JResources//com//google//samples//apps//nowinandroid//data",
-    "p:com.google.samples.apps.nowinandroid.core.data",
-    "c:com.google.samples.apps.nowinandroid.MainActivity$$ExternalSynthetic$Condy0",
-    "t:JResources//google//protobuf",
     "t:JResources//lib//arm64-v8a",
+    "t:JResources//google//protobuf",
     "t:JResources//lib//x86",
-    "t:JResources//resources.arsc"
+    "t:JResources//resources.arsc",
+    "t:JSources"
   ],
   "codeData": {
     "comments": [],
@@ -21,7 +20,7 @@
       "type": "class",
       "tabPath": "_COROUTINE._BOUNDARY",
       "subPath": "java",
-      "caret": 957,
+      "caret": 0,
       "view": {
         "x": 0,
         "y": 0
@@ -184,36 +183,6 @@
     },
     {
       "type": "class",
-      "tabPath": "androidx.appcompat.app.AppCompatDelegate$$ExternalSyntheticLambda1",
-      "subPath": "java",
-      "caret": 0,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
-      "tabPath": "androidx.appcompat.app.AppCompatDelegate$SerialExecutor$$ExternalSyntheticLambda0",
-      "subPath": "java",
-      "caret": 0,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
       "tabPath": "androidx.appcompat.app.AppCompatDelegateImpl",
       "subPath": "java",
       "caret": 3826,
@@ -264,7 +233,7 @@
       "caret": 789,
       "view": {
         "x": 0,
-        "y": 1296
+        "y": 322
       },
       "active": false,
       "pinned": false,
@@ -294,7 +263,7 @@
       "caret": 2564,
       "view": {
         "x": 0,
-        "y": 725
+        "y": 690
       },
       "active": false,
       "pinned": false,
@@ -414,7 +383,7 @@
       "caret": 906,
       "view": {
         "x": 0,
-        "y": 839
+        "y": 370
       },
       "active": false,
       "pinned": false,
@@ -909,7 +878,7 @@
       "caret": 15083,
       "view": {
         "x": 0,
-        "y": 1939
+        "y": 4147
       },
       "active": false,
       "pinned": false,
@@ -979,87 +948,12 @@
     },
     {
       "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.feature.bookmarks.BookmarksScreenKt$$ExternalSyntheticLambda1",
-      "subPath": "java",
-      "caret": 297,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.feature.bookmarks.BookmarksScreenKt$$ExternalSyntheticLambda11",
-      "subPath": "java",
-      "caret": 419,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.feature.bookmarks.BookmarksScreenKt$$ExternalSyntheticLambda2",
-      "subPath": "java",
-      "caret": 339,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.feature.bookmarks.BookmarksScreenKt$$ExternalSyntheticLambda5",
-      "subPath": "java",
-      "caret": 339,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.feature.bookmarks.BookmarksScreenKt$$ExternalSyntheticLambda7",
-      "subPath": "java",
-      "caret": 285,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
       "tabPath": "com.google.samples.apps.nowinandroid.feature.bookmarks.navigation.BookmarksNavigationKt",
       "subPath": "java",
       "caret": 2532,
       "view": {
         "x": 0,
-        "y": 1397
+        "y": 514
       },
       "active": false,
       "pinned": false,
@@ -1087,21 +981,6 @@
       "tabPath": "com.google.samples.apps.nowinandroid.sync.di.SyncModule",
       "subPath": "java",
       "caret": 1600,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.ui.NiaAppKt$NiaApp$1$1$$ExternalSyntheticLambda1",
-      "subPath": "java",
-      "caret": 261,
       "view": {
         "x": 0,
         "y": 0
@@ -1654,21 +1533,6 @@
     },
     {
       "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.core.network.retrofit.RetrofitNiaNetwork$$ExternalSyntheticLambda1",
-      "subPath": "java",
-      "caret": 229,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
       "tabPath": "com.google.samples.apps.nowinandroid.core.network.retrofit.RetrofitNiaNetwork$getTopics$1$$ExternalSynthetic$Condy0",
       "subPath": "java",
       "caret": 348,
@@ -1854,7 +1718,7 @@
       "caret": 3424,
       "view": {
         "x": 0,
-        "y": 1059
+        "y": 354
       },
       "active": false,
       "pinned": false,
@@ -1912,21 +1776,6 @@
       "tabPath": "com.google.samples.apps.nowinandroid.feature.bookmarks.BookmarksScreenKt$BookmarksGridPreview$1$$ExternalSynthetic$Condy0",
       "subPath": "java",
       "caret": 232,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.feature.bookmarks.BookmarksScreenKt$BookmarksGridPreview$1$$ExternalSyntheticLambda3",
-      "subPath": "java",
-      "caret": 300,
       "view": {
         "x": 0,
         "y": 0
@@ -2018,8 +1867,8 @@
       "subPath": "java",
       "caret": 38297,
       "view": {
-        "x": 0,
-        "y": 16466
+        "x": 120,
+        "y": 8914
       },
       "active": false,
       "pinned": false,
@@ -2051,7 +1900,7 @@
         "x": 0,
         "y": 192
       },
-      "active": true,
+      "active": false,
       "pinned": false,
       "bookmarked": false,
       "hidden": false,
@@ -2061,7 +1910,7 @@
       "type": "class",
       "tabPath": "com.google.samples.apps.nowinandroid.uitesthiltmanifest.HiltComponentActivity",
       "subPath": "java",
-      "caret": 843,
+      "caret": 0,
       "view": {
         "x": 0,
         "y": 0
@@ -2092,21 +1941,6 @@
       "tabPath": "com.google.samples.apps.nowinandroid.MainActivity$$ExternalSynthetic$Condy0",
       "subPath": "java",
       "caret": 214,
-      "view": {
-        "x": 0,
-        "y": 0
-      },
-      "active": false,
-      "pinned": false,
-      "bookmarked": false,
-      "hidden": false,
-      "previewTab": false
-    },
-    {
-      "type": "class",
-      "tabPath": "com.google.samples.apps.nowinandroid.MainActivity$$ExternalSyntheticLambda1",
-      "subPath": "java",
-      "caret": 0,
       "view": {
         "x": 0,
         "y": 0
@@ -2172,6 +2006,36 @@
         "y": 0
       },
       "active": false,
+      "pinned": false,
+      "bookmarked": false,
+      "hidden": false,
+      "previewTab": false
+    },
+    {
+      "type": "resource",
+      "tabPath": "lib/x86/libandroidx.graphics.path.so",
+      "subPath": "",
+      "caret": 0,
+      "view": {
+        "x": 0,
+        "y": 0
+      },
+      "active": false,
+      "pinned": false,
+      "bookmarked": false,
+      "hidden": false,
+      "previewTab": false
+    },
+    {
+      "type": "resource",
+      "tabPath": "lib/x86/libdatastore_shared_counter.so",
+      "subPath": "",
+      "caret": 0,
+      "view": {
+        "x": 0,
+        "y": 0
+      },
+      "active": true,
       "pinned": false,
       "bookmarked": false,
       "hidden": false,
