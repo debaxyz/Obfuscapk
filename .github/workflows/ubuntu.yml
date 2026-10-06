@@ -39,13 +39,6 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android Build Tools
-        run: |
-          sdkmanager "build-tools;${BUILD_TOOLS_VERSION}"
-          yes | sdkmanager --licenses || true
 
       - name: Install Python packages
         run: |
