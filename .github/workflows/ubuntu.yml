@@ -73,14 +73,14 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          username: claudiugeorgiu
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: debaxyz
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: claudiugeorgiu/obfuscapk
+          images: debaxyz/obfuscapk
           tags: |
             type=raw,value=latest
             type=semver,pattern={{version}}
